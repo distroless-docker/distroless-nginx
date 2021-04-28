@@ -7,10 +7,10 @@ This repository builds docker from debian/ubuntu sources into a scratch containe
 docker build -t distroless-nginx  .
 
 ## Build Multi Arch
-docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag distroless/distroless-nginx  .
+docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag distrolessdocker/distroless-nginx  .
 
 # Usage
-docker run -p  80:80 distroless/distroless-nginx 
+docker run -p  80:80 distrolessdocker/distroless-nginx:1.18.0 
 
 # Licenses
 

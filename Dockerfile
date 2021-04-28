@@ -25,7 +25,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf *.tar.xz && rm -rf *.dsc
         
-RUN mkdir licenses && for f in $(find /work/out/usr/share/doc/*/copyright -type f); do cp $f licenses/$(basename $(dirname $f)); done
+RUN mkdir licenses && for f in $(find /work/out/usr/share/doc/*/copyright -type f); do cp $f licenses/$(basename $(dirname $f))-$(find /work/debs | grep $(basename $(dirname $f)) | awk -F_ '{print $2}' | sed "s/-/_/"); done
 
 RUN addgroup --system --gid 101 nginx
 RUN adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos "nginx user" --shell /bin/false --uid 101 nginx

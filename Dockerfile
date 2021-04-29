@@ -36,11 +36,11 @@ FROM scratch as image-temp
 COPY --from=builder /etc/passwd /etc/group /etc/
 COPY --from=builder /run/nginx /run/nginx
 
-COPY html /usr/share/nginx/html/
-COPY nginx.conf /etc/nginx/nginx.conf
-
 COPY --from=builder /work/out /
 COPY --from=builder /work/licenses /licenses
+
+COPY html /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/nginx.conf
 
 FROM scratch as image-final
 

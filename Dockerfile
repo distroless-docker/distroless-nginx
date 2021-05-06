@@ -31,7 +31,7 @@ RUN apt-get update && \
     cat packages | sed 's/ /\n/g' | sort --unique | wget -P sources/ -i - || true \
     && rm -rf /var/lib/apt/lists/*
         
-RUN mkdir licenses && for f in $(find /work/out/usr/share/doc/*/copyright -type f); do cp $f licenses/$(basename $(dirname $f)); done
+RUN mkdir licenses && for f in $(find /work/out/usr/share/doc/*/copyright -type f); do cp $f licenses/$(basename $(dirname $f))-$(find /work/debs | grep $(basename $(dirname $f)) | awk -F_ '{print $2}' | sed "s/-/_/"); done
 
 RUN addgroup --system --gid 101 nginx
 RUN adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos "nginx user" --shell /bin/false --uid 101 nginx
@@ -45,11 +45,11 @@ FROM scratch as image-temp
 COPY --from=builder /etc/passwd /etc/group /etc/
 COPY --from=builder /run/nginx /run/nginx
 
-COPY html /usr/share/nginx/html/
-COPY nginx.conf /etc/nginx/nginx.conf
-
 COPY --from=builder /work/out /
 COPY --from=builder /work/licenses /licenses
+
+COPY html /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/nginx.conf
 
 FROM scratch as image-final
 

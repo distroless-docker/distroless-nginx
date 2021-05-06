@@ -5,31 +5,40 @@ WORKDIR /work
 
 RUN echo "deb-src http://security.ubuntu.com/ubuntu focal-security main restricted" >> /etc/apt/sources.list \
     && echo "deb-src http://security.ubuntu.com/ubuntu focal-security universe" >> /etc/apt/sources.list \
-    && echo "deb-src http://security.ubuntu.com/ubuntu focal-security multiverse" >> /etc/apt/sources.list
+    && echo "deb-src http://security.ubuntu.com/ubuntu focal-security multiverse" >> /etc/apt/sources.list \
+    && echo "deb-src http://archive.ubuntu.com/ubuntu/ focal main restricted" >> /etc/apt/sources.list \
+    && echo "deb-src http://archive.ubuntu.com/ubuntu/ focal-updates main restricted" >> /etc/apt/sources.list \
+    && echo "deb-src http://archive.ubuntu.com/ubuntu/ focal universe" >> /etc/apt/sources.list \
+    && echo "deb-src http://archive.ubuntu.com/ubuntu/ focal-updates universe" >> /etc/apt/sources.list \
+    && echo "deb-src http://archive.ubuntu.com/ubuntu/ focal multiverse" >> /etc/apt/sources.list \
+    && echo "deb-src http://archive.ubuntu.com/ubuntu/ focal-updates multiverse" >> /etc/apt/sources.list \
+    && echo "deb-src http://archive.ubuntu.com/ubuntu/ focal-backports main restricted universe multiverse" >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get -y install \
     wget \
     && rm -rf /var/lib/apt/lists/*
     
-ENV PKG=nginx
+ENV PKG=nginx=1.18.0-0ubuntu1
 RUN apt-get update && \
-    for f in $(apt-cache depends $PKG -qq --recurse --no-pre-depends --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances | sed 's/.*: //' | sort --unique); do wget $(apt-get install --reinstall --print-uris -qq $f | cut -d"'" -f2); done \
+    for f in $(apt-cache depends $PKG -qq --recurse --no-pre-depends --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances | sed 's/.*: .*//' | sed 's/.*:.*//' | sed 's/<.*>//' | sed -e 's/^[ \t]*//' | sort --unique); do echo $(apt-get -y install --print-uris --reinstall --no-install-recommends $f |  grep -E 'https://|http://' | tr -d "'" | awk '{print$1}'); done > packages && \
+    cat packages | sed 's/ /\n/g' | sort --unique | wget -i - \
     && rm -rf /var/lib/apt/lists/* \
     && for f in ./*.deb; do dpkg -x $f out; done \
     && for f in ./*.deb; do cp $f debs/; done \
     && rm -rf *.deb
-    
 RUN apt-get update && \
-    apt-get source --print-uris -qq gcc-8-base | cut -d"'" -f2 && \
-    for f in $(apt-cache depends $PKG -qq --recurse --no-pre-depends --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances | sed 's/.*: //' | sort --unique); do echo $(apt-get source --print-uris -qq $f | cut -d"'" -f2) && wget $(apt-get source --print-uris -qq $f | cut -d"'" -f2) -P sources/ || true; done \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf *.tar.xz && rm -rf *.dsc
+    for f in $(apt-cache depends $PKG -qq --recurse --no-pre-depends --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances | sed 's/.*: .*//' | sed 's/.*:.*//' | sed 's/<.*>//' | sed -e 's/^[ \t]*//' | sort --unique); do echo $(apt-get source --print-uris $f |  grep -E 'https://|http://' | tr -d "'" | awk '{print$1}'); done > packages && \
+    cat packages | sed 's/ /\n/g' | sort --unique | wget -P sources/ -i - || true \
+    && rm -rf /var/lib/apt/lists/*
         
 RUN mkdir licenses && for f in $(find /work/out/usr/share/doc/*/copyright -type f); do cp $f licenses/$(basename $(dirname $f)); done
 
 RUN addgroup --system --gid 101 nginx
 RUN adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos "nginx user" --shell /bin/false --uid 101 nginx
 RUN mkdir -p /run/nginx
+
+FROM scratch as image-sources
+COPY --from=builder /work/sources /
 
 FROM scratch as image-temp
 

@@ -5,3 +5,4 @@ DOCKER_CLI_EXPERIMENTAL=enabled docker buildx create --name mybuilder --use
 
 
 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag distrolessdocker/distroless-nginx:$VERSION .
+DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --target image-sources --tag distrolessdocker/distroless-nginx:$VERSION-sources .
